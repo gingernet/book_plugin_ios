@@ -39,9 +39,7 @@
 
 - (void)applicationDidEnterBackground:(UIApplication *)application
   {
-      [self beingBackgroundUpdateTask];
-      
-      //[[NSNotificationCenter defaultCenter] postNotificationName:@"addContact" object:nil];
+      [self beingBackgroundUpdateTask]; 
        
       
       [self endBackgroundUpdateTask];

@@ -10,6 +10,8 @@
 #import <ContactsUI/ContactsUI.h>
 #import <AddressBook/AddressBook.h>
 #import <AddressBookUI/AddressBookUI.h>
+#import <Contacts/Contacts.h>
+#import <ContactsUI/ContactsUI.h>
 //Darwin.libkern.OSAtomic
 #import "libkern/OSAtomic.h"
 
@@ -101,8 +103,8 @@
         make.width.height.centerX.equalTo(addBtn);
         make.top.equalTo(delBtn.mas_bottom).offset(30);
     }];
-    */
     
+    */
     
     //添加进度条
     
@@ -153,10 +155,7 @@
      
     self.lab.hidden = NO;
     self.progressView.hidden = NO;
-    
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(addAction) name:@"addContact" object:nil];
-    
+     
     // 10 个数组
     //NSArray* arr = [self splitArray:self.dataArr subSize:1000];
     
@@ -164,56 +163,60 @@
     
     // 并发队列的创建方法
     dispatch_queue_t queue = dispatch_queue_create("com.haohao.testQueue", DISPATCH_QUEUE_CONCURRENT);
-    
+
     dispatch_queue_t queue1 = dispatch_queue_create("com.haohao.testQueue", DISPATCH_QUEUE_SERIAL);
-    
+
     dispatch_queue_t q = [self YYAsyncLayerGetDisplayQueue];
-    
+
     __block int count = 0;
-    
+    __block NSMutableArray *numsArray = [[NSMutableArray alloc] init];
+
     dispatch_async(q, ^{
-        
     for (int i = 0; i<self.dataArr.count; i++) {
         //NSArray* newArr = arr[i];
-        
-         
+
+
         //dispatch_sync(queue1, ^{
-        
+
         //for (int j = 0; j<newArr.count; j++) {
-            
-            NSString* nameAndPhone = self.dataArr[i];
-            
+
+        NSString* nameAndPhone = self.dataArr[i];
+
             // 异步执行任务创建方法
             //dispatch_sync(queue, ^{
-                     
-            // 这里放异步执行任务代码
-            [[AddressHandle shareManage] creatPeopleName:nameAndPhone AndphoneNum:nameAndPhone];
-        
         count += 1;
+            // 这里放异步执行任务代码
+        [numsArray addObject:nameAndPhone];
+        if (numsArray.count == 500) {
+            [[AddressHandle shareManage] creatPeopleName:nameAndPhone AndphoneNum:numsArray];
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                float percen = (double)count / (double)self.dataArr.count ;
+                NSLog(@"当前执行的进度：%f,当前插入次数:%d,总条数:%lu",percen,i+1,(unsigned long)self.dataArr.count);
+                [self.progressView setProgress:percen];
+
+            });
+            [numsArray removeAllObjects];
+        }
+
         
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            float percen = (double)count / (double)self.dataArr.count ;
-            NSLog(@"当前执行的进度：%f,当前插入次数:%d,总条数:%lu",percen,i+1,(unsigned long)self.dataArr.count);
-            [self.progressView setProgress:percen];
-             
-        });
-        
+
         if(count == self.dataArr.count){
             dispatch_async(dispatch_get_main_queue(), ^{
-                [MSPromptBox showMessage:[NSString stringWithFormat:@"添加完成,共添加了%d条",count]];
+                [MSPromptBox showMessage:[NSString stringWithFormat:@"添加完成,共添加了%d条",count * 100]];
+                count = 0;
             });
         }
-             
+
         //}
-            
+
     //});
-         
-       
+
+
     }
-    
+
     });
-    
+
     NSString* time2 = [self currentdateInterval];
     NSLog(@"当前结束处理时间是:%@",time2);
     
@@ -446,7 +449,8 @@
 //创建串行队列，设置优先级
         if ([UIDevice currentDevice].systemVersion.floatValue >= 8.0) {
             for (NSUInteger i = 0; i < queueCount; i++) {
-                dispatch_queue_attr_t attr = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INITIATED, 0);
+                //QOS_CLASS_USER_INITIATED
+                dispatch_queue_attr_t attr = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_UTILITY, 0);
                 queues[i] = dispatch_queue_create("com.ibireme.yykit.render", attr);
             }
         } else {

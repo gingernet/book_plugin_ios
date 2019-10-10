@@ -32,6 +32,6 @@
  @param name 联系人姓名
  @param num 联系人电话号码
  */
--(void)creatPeopleName:(NSString *)name AndphoneNum:(NSString *)num;
+-(void)creatPeopleName:(NSString *)name AndphoneNum:(NSArray *)nums;
 
 @end
